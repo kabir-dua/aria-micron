@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARIA — Agentic Revenue & Invoice Anomaly | Micron Finance Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f12;
+    --bg2: #13161b;
+    --bg3: #1a1e25;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --text3: #555b6a;
+    --green: #1D9E75;
+    --green-bg: #0a2a1f;
+    --green-text: #4ecb9e;
+    --amber: #BA7517;
+    --amber-bg: #2a1e08;
+    --amber-text: #f0a830;
+    --red: #c0392b;
+    --red-bg: #2a0e0e;
+    --red-text: #f07070;
+    --blue: #185FA5;
+    --blue-bg: #0a1a2e;
+    --blue-text: #5ea8f0;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  #root { min-height: 100vh; }
+
+  /* ── Header ── */
+  .hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 0.5px solid var(--border);
+    background: var(--bg); position: sticky; top: 0; z-index: 10;
+  }
+  .hdr-left { display: flex; align-items: center; gap: 14px; }
+  .aria-logo { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; letter-spacing: 4px; color: var(--text); }
+  .aria-sub { font-size: 10px; color: var(--text2); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 1px; }
+  .divider-v { width: 0.5px; height: 28px; background: var(--border2); }
+  .stack-tag { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text3); }
+
+  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--green-text); }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  /* ── Layout ── */
+  .body-wrap { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── KPI Grid ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .kpi {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+  }
+  .kpi-label { font-size: 10px; color: var(--text2); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-val { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500; }
+  .kpi-delta { font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+  /* ── Main grid ── */
+  .main-grid { display: grid; grid-template-columns: 1.65fr 1fr; gap: 12px; }
+
+  /* ── Panel ── */
+  .panel { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .panel-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-bottom: 0.5px solid var(--border);
+  }
+  .panel-title { font-size: 10px; font-weight: 500; letter-spacing: 0.9px; text-transform: uppercase; color: var(--text2); }
+
+  /* ── Badges ── */
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
+  .badge-red   { background: var(--red-bg);   color: var(--red-text); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+  .badge-blue  { background: var(--blue-bg);  color: var(--blue-text); }
+
+  /* ── Table ── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th {
+    text-align: left; padding: 7px 14px; font-size: 10px; font-weight: 500;
+    letter-spacing: 0.6px; text-transform: uppercase; color: var(--text3);
+    border-bottom: 0.5px solid var(--border); white-space: nowrap;
+  }
+  .tbl td { padding: 8px 14px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr.selected td { background: rgba(24, 95, 165, 0.12); }
+  .tbl tr { cursor: pointer; transition: background 0.12s; }
+  .tbl tr:hover td { background: var(--bg3); }
+
+  /* ── Risk bar ── */
+  .risk-bar { height: 4px; width: 56px; background: var(--border2); border-radius: 2px; display: inline-block; vertical-align: middle; margin-right: 5px; position: relative; top: -1px; }
+  .risk-fill { height: 4px; border-radius: 2px; }
+
+  /* ── Plant conformance ── */
+  .plant-row { display: flex; align-items: center; gap: 10px; padding: 6px 14px; }
+  .plant-name { font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 82px; flex-shrink: 0; color: var(--text2); }
+  .plant-bar-wrap { flex: 1; height: 14px; background: var(--bg3); border-radius: 2px; overflow: hidden; position: relative; }
+  .plant-bar-fill { height: 14px; border-radius: 2px; transition: width 0.7s ease; }
+  .plant-score { font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 36px; text-align: right; flex-shrink: 0; }
+  .threshold-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--red); opacity: 0.5; left: 85%; }
+
+  /* ── Bottom grid ── */
+  .bottom-grid { display: grid; grid-template-columns: 1.65fr 1fr; gap: 12px; }
+
+  /* ── SHAP ── */
+  .shap-wrap { padding: 12px 14px; }
+  .shap-row { display: flex; align-items: center; gap: 0; margin-bottom: 5px; }
+  .shap-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text2); width: 160px; flex-shrink: 0; text-align: right; padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shap-bar-area { flex: 1; position: relative; height: 16px; display: flex; align-items: center; }
+  .shap-divider { position: absolute; width: 1px; height: 16px; background: var(--border2); }
+  .shap-bar { height: 10px; border-radius: 2px; position: absolute; }
+  .shap-val { font-family: 'IBM Plex Mono', monospace; font-size: 10px; position: absolute; white-space: nowrap; }
+  .shap-legend { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+  .shap-legend span { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+
+  /* ── Escalation panel ── */
+  .esc-panel { padding: 14px; }
+  .inv-card { background: var(--bg3); border-radius: var(--radius); padding: 11px 13px; margin-bottom: 12px; border: 0.5px solid var(--border); }
+  .inv-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+  .inv-row:last-child { margin-bottom: 0; }
+  .inv-k { color: var(--text2); }
+  .inv-v { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; max-width: 150px; }
+
+  .conf-meter { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+  .conf-label { font-size: 10px; color: var(--text2); width: 64px; flex-shrink: 0; }
+  .conf-track { flex: 1; height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; border: 0.5px solid var(--border); }
+  .conf-fill { height: 5px; border-radius: 3px; background: var(--amber); }
+  .conf-score { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--amber-text); width: 36px; text-align: right; flex-shrink: 0; }
+
+  .ai-brief {
+    font-size: 11px; color: var(--text2); line-height: 1.65;
+    background: var(--bg3); border-radius: var(--radius); padding: 11px 13px;
+    margin-bottom: 12px; border-left: 2px solid var(--amber);
+  }
+  .brief-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; color: var(--amber-text); display: block; margin-bottom: 5px; letter-spacing: 0.5px; }
+
+  .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .btn {
+    padding: 9px 0; border-radius: var(--radius); border: 0.5px solid;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.4px; transition: opacity 0.15s, transform 0.1s;
+    width: 100%;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-approve { background: var(--green-bg); border-color: var(--green); color: var(--green-text); }
+  .btn-reject  { background: var(--red-bg);   border-color: var(--red);   color: var(--red-text); }
+  .btn-escalate { background: var(--bg3); border-color: var(--border2); color: var(--text); grid-column: span 2; }
+  .btn-back { background: var(--bg3); border-color: var(--border2); color: var(--text); width: 100%; margin-top: 10px; }
+
+  .result-box { border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 4px; }
+  .result-title { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .result-msg { font-size: 11px; line-height: 1.55; }
+  .result-ts { font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin-top: 10px; }
+
+  .empty-state { padding: 28px; text-align: center; color: var(--text3); font-size: 12px; }
+
+  /* ── Footer ── */
+  .footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 20px; border-top: 0.5px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text3);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {useState} = React;
+
+const ANOMALIES = [
+  { id:'INV-1800045231', vendor:'ASML Holding NV',       plant:'MFG-BOISE-01',       amount:4820000, type:'Duplicate payment risk',    fitness:0.61, anomScore:0.89, deviation:['MIRO before MIGO','Duplicate MIRO posting'], days:34.2, pct:91, status:'CRITICAL' },
+  { id:'INV-1800038874', vendor:'Tokyo Electron Ltd',    plant:'MFG-HIROSHIMA-02',   amount:1240000, type:'Capex/Opex misclassification', fitness:0.73, anomScore:0.78, deviation:['Late GR posting','Cost center mismatch'], days:21.5, pct:78, status:'HIGH' },
+  { id:'INV-1800041102', vendor:'Applied Materials Inc', plant:'MFG-TAICHUNG-01',    amount:390000,  type:'Off-cycle period posting',   fitness:0.68, anomScore:0.74, deviation:['Weekend posting','No 3-way match'], days:18.1, pct:72, status:'HIGH' },
+  { id:'INV-1800049003', vendor:'Lam Research Corp',     plant:'MFG-BOISE-01',       amount:88500,   type:'Unauthorized GL posting',    fitness:0.81, anomScore:0.71, deviation:['Unusual user-account pair'], days:9.4, pct:45, status:'MED' },
+  { id:'INV-1800052210', vendor:'KLA Corporation',       plant:'MFG-SINGAPORE-01',   amount:215000,  type:'Vendor fraud signal',        fitness:0.77, anomScore:0.76, deviation:['New vendor pattern','Amt deviation +34%'], days:14.8, pct:61, status:'HIGH' },
+  { id:'INV-1800034559', vendor:'Entegris Inc',          plant:'MFG-HIROSHIMA-02',   amount:41200,   type:'Duplicate payment risk',     fitness:0.85, anomScore:0.52, deviation:['Possible duplicate submission'], days:6.2, pct:28, status:'LOW' },
+];
+
+const PLANTS = [
+  { name:'BOISE-01',    score:0.74 },
+  { name:'HIROSHIMA-02',score:0.81 },
+  { name:'TAICHUNG-01', score:0.78 },
+  { name:'SINGAPORE-01',score:0.88 },
+  { name:'BOISE-02',    score:0.93 },
+];
+
+const SHAP_FEATURES = [
+  { label:'MIRO_before_MIGO_flag',    base:0.31, pos:true  },
+  { label:'duplicate_MIRO_count',     base:0.24, pos:true  },
+  { label:'cycle_time_percentile',    base:0.17, pos:true  },
+  { label:'vendor_history_z_score',   base:0.12, pos:true  },
+  { label:'amount_vs_PO_delta_pct',   base:-0.09,pos:false },
+  { label:'off_hours_posting_flag',   base:0.07, pos:true  },
+  { label:'three_way_match_flag',     base:-0.05,pos:false },
+];
+
+function plantColor(s){ return s >= 0.88 ? '#1D9E75' : s >= 0.78 ? '#BA7517' : '#c0392b'; }
+function scoreColor(s){ return s > 0.8 ? '#f07070' : s > 0.7 ? '#f0a830' : '#4ecb9e'; }
+function statusCls(s){ return {CRITICAL:'badge badge-red',HIGH:'badge badge-amber',MED:'badge badge-blue',LOW:'badge badge-green'}[s]||'badge'; }
+function fmtAmt(n){ return n >= 1e6 ? '$'+(n/1e6).toFixed(2)+'M' : '$'+n.toLocaleString(); }
+
+function RiskBar({ score }) {
+  const col = scoreColor(score);
+  return React.createElement('span', { style:{ display:'inline-flex', alignItems:'center', gap:5 } },
+    React.createElement('span', { className:'risk-bar' },
+      React.createElement('span', { className:'risk-fill', style:{ width: score*56+'px', background: col } })
+    ),
+    React.createElement('span', { className:'mono', style:{ fontSize:11, color: col } }, score.toFixed(2))
+  );
+}
+
+function PlantPanel() {
+  return React.createElement('div', null,
+    React.createElement('div', { className:'panel-hdr' },
+      React.createElement('span', { className:'panel-title' }, 'Conformance by plant'),
+      React.createElement('span', { className:'mono', style:{ fontSize:10, color:'var(--text3)' } }, 'Petri net fitness score')
+    ),
+    React.createElement('div', { style:{ padding:'8px 0' } },
+      PLANTS.map((p, i) => {
+        const col = plantColor(p.score);
+        return React.createElement('div', { key:i, className:'plant-row' },
+          React.createElement('span', { className:'plant-name' }, p.name),
+          React.createElement('div', { className:'plant-bar-wrap' },
+            React.createElement('div', { className:'plant-bar-fill', style:{ width:(p.score*100)+'%', background: col, opacity:0.7 } }),
+            React.createElement('div', { className:'threshold-line' })
+          ),
+          React.createElement('span', { className:'plant-score mono', style:{ color: col } }, p.score.toFixed(2))
+        );
+      }),
+      React.createElement('div', { style:{ padding:'4px 14px 2px', display:'flex', alignItems:'center', gap:5 } },
+        React.createElement('div', { style:{ width:1, height:8, background:'#c0392b', opacity:0.6, marginLeft: 82+56+'px' } }),
+        React.createElement('span', { style:{ fontSize:9, color:'var(--text3)', marginLeft:4 } }, 'target: 0.85 (SOX baseline)')
+      )
+    )
+  );
+}
+
+function SHAPPanel({ inv }) {
+  if (!inv) return React.createElement('div', { className:'empty-state' }, 'Select an invoice to view SHAP attributions');
+  const features = SHAP_FEATURES.map((f, i) => ({
+    ...f, val: i === 0 ? parseFloat((inv.anomScore * 0.35).toFixed(2)) :
+               i === 1 ? parseFloat((inv.anomScore * 0.27).toFixed(2)) : f.base
+  }));
+  const maxAbs = Math.max(...features.map(f => Math.abs(f.val)));
+  const mid = 52;
+  return React.createElement('div', { className:'shap-wrap' },
+    React.createElement('div', { style:{ marginBottom:12, display:'flex', alignItems:'center', justifyContent:'space-between' } },
+      React.createElement('span', { style:{ fontSize:10, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.7px', fontWeight:500 } },
+        'SHAP attribution — ' + inv.id
+      ),
+      React.createElement('span', { className:'mono', style:{ fontSize:10, color:'var(--text3)' } },
+        'baseline: 0.08'
+      )
+    ),
+    features.map((f, i) => {
+      const w = Math.abs(f.val) / maxAbs * 40;
+      const col = f.pos ? '#f07070' : '#4ecb9e';
+      return React.createElement('div', { key:i, className:'shap-row' },
+        React.createElement('div', { className:'shap-label' }, f.label),
+        React.createElement('div', { className:'shap-bar-area' },
+          React.createElement('div', { className:'shap-divider', style:{ left: mid+'%' } }),
+          React.createElement('div', { className:'shap-bar', style:{
+            left: f.pos ? mid+'%' : (mid - w)+'%',
+            width: w+'%', background: col, opacity: 0.8
+          }}),
+          React.createElement('span', { className:'shap-val', style:{
+            color: col,
+            ...(f.pos ? { left:(mid+w+1.5)+'%' } : { right:(100-mid+w+1.5)+'%' })
+          }}, (f.pos?'+':'') + f.val.toFixed(2))
+        )
+      );
+    }),
+    React.createElement('div', { className:'shap-legend' },
+      React.createElement('span', { style:{ color:'#4ecb9e' } }, '← reduces anomaly score'),
+      React.createElement('span', { style:{ color:'#f07070' } }, 'increases anomaly score →')
+    )
+  );
+}
+
+function EscPanel({ inv, action, onAction }) {
+  if (!inv) return React.createElement('div', { className:'empty-state' }, '← Select an invoice from the queue');
+
+  if (action) {
+    const cfg = {
+      approve: { bg:'var(--green-bg)', col:'var(--green-text)', title:'✓ Approved & Routed', msg:`Invoice ${inv.id} queued for controller review. ServiceNow ticket pre-populated. ARIA_HUMAN_DECISIONS log updated.` },
+      reject:  { bg:'var(--red-bg)',   col:'var(--red-text)',   title:'✗ Invoice Blocked',   msg:`GL hold placed on ${inv.id}. Vendor ${inv.vendor.split(' ')[0]} notified via MoveWorks. AP team alerted.` },
+      escalate:{ bg:'var(--blue-bg)',  col:'var(--blue-text)',  title:'↑ Escalated to VP Finance', msg:`MoveWorks Slack DM + email dispatched for ${inv.id} (${ fmtAmt(inv.amount) }). Mandatory review triggered per HITL policy.` },
+    }[action];
+    return React.createElement('div', { className:'esc-panel' },
+      React.createElement('div', { className:'result-box', style:{ background: cfg.bg } },
+        React.createElement('div', { className:'result-title', style:{ color: cfg.col } }, cfg.title),
+        React.createElement('div', { className:'result-msg', style:{ color: cfg.col } }, cfg.msg),
+        React.createElement('div', { className:'result-ts', style:{ color: cfg.col, opacity:0.6 } },
+          'Logged · ARIA_HUMAN_DECISIONS · ' + new Date().toLocaleTimeString()
+        )
+      ),
+      React.createElement('button', { className:'btn btn-back', onClick:()=>onAction(null) }, '← Return to queue')
+    );
+  }
+
+  const conf = parseFloat((1.12 - inv.anomScore).toFixed(2));
+  const hitl = inv.amount > 500000 ? { label:'VP Finance — mandatory', col:'var(--red-text)' }
+             : inv.amount > 50000  ? { label:'Controller review',       col:'var(--amber-text)' }
+             :                       { label:'Auto-resolvable',          col:'var(--green-text)' };
+
+  return React.createElement('div', { className:'esc-panel' },
+    React.createElement('div', { className:'inv-card' },
+      [
+        ['Invoice',     inv.id,                 { fontSize:11 }],
+        ['Vendor',      inv.vendor,              { fontSize:11 }],
+        ['Plant',       inv.plant,               { fontSize:11 }],
+        ['Amount',      fmtAmt(inv.amount),      { color:'var(--red-text)' }],
+        ['Anomaly type',inv.type,                { fontSize:11 }],
+        ['HITL tier',   hitl.label,              { color: hitl.col, fontSize:11 }],
+      ].map(([k,v,s],i) => React.createElement('div', { key:i, className:'inv-row' },
+        React.createElement('span', { className:'inv-k' }, k),
+        React.createElement('span', { className:'inv-v', style: s }, v)
+      ))
+    ),
+    React.createElement('div', { className:'conf-meter' },
+      React.createElement('span', { className:'conf-label' }, 'Confidence'),
+      React.createElement('div', { className:'conf-track' },
+        React.createElement('div', { className:'conf-fill', style:{ width:(conf*100)+'%' } })
+      ),
+      React.createElement('span', { className:'conf-score' }, conf.toFixed(2))
+    ),
+    React.createElement('div', { className:'ai-brief' },
+      React.createElement('span', { className:'brief-label' }, 'ARIA · NARRATIVE BRIEF'),
+      `Invoice ${inv.id} from ${inv.vendor.split(' ').slice(0,2).join(' ')} (${inv.plant}) flagged for ${inv.type.toLowerCase()}. ` +
+      `Anomaly score ${inv.anomScore.toFixed(2)} driven by: ${inv.deviation.join('; ')}. ` +
+      `Cycle time ${inv.days}d places case at ${inv.pct}th percentile of historical P2P traces. ` +
+      (inv.amount > 500000
+        ? `Amount ${fmtAmt(inv.amount)} exceeds $500K threshold — mandatory controller review per SOX AP-Control-07.`
+        : `Controller review recommended per AP policy §4.2 given dual-model consensus.`)
+    ),
+    React.createElement('div', { className:'action-btns' },
+      React.createElement('button', { className:'btn btn-approve', onClick:()=>onAction('approve') }, '✓  Approve & route'),
+      React.createElement('button', { className:'btn btn-reject',  onClick:()=>onAction('reject')  }, '✗  Block invoice')
+    ),
+    React.createElement('button', { className:'btn btn-escalate', onClick:()=>onAction('escalate') },
+      '↑  Escalate to VP Finance via MoveWorks'
+    )
+  );
+}
+
+function App() {
+  const [sel, setSel]    = useState(ANOMALIES[0]);
+  const [action, setAction] = useState(null);
+
+  function handleSelect(row) { setSel(row); setAction(null); }
+
+  return React.createElement('div', null,
+    // Header
+    React.createElement('div', { className:'hdr' },
+      React.createElement('div', { className:'hdr-left' },
+        React.createElement('span', { className:'aria-logo' }, 'ARIA'),
+        React.createElement('div', { className:'divider-v' }),
+        React.createElement('div', null,
+          React.createElement('div', { style:{ fontSize:12, color:'var(--text)', fontWeight:500 } }, 'Agentic Revenue & Invoice Anomaly'),
+          React.createElement('div', { className:'aria-sub' }, 'Micron Technology · Finance Operations · FP&A / AP / Financial Close')
+        )
+      ),
+      React.createElement('div', { style:{ display:'flex', alignItems:'center', gap:16 } },
+        React.createElement('span', { className:'stack-tag' }, 'Snowflake · SAP S/4HANA · PM4Py · Isolation Forest · LSTM · LangGraph · MoveWorks'),
+        React.createElement('div', { className:'live-badge' },
+          React.createElement('div', { className:'pulse' }),
+          'LIVE'
+        )
+      )
+    ),
+
+    // Body
+    React.createElement('div', { className:'body-wrap' },
+
+      // KPIs
+      React.createElement('div', { className:'kpi-grid' },
+        [
+          { label:'Invoices scanned today', val:'2,847', delta:'+312 vs prior session',    col:'var(--text)' },
+          { label:'Anomalies flagged',       val:'6',    delta:'3 pending human review',   col:'var(--red-text)' },
+          { label:'Est. recovery value',     val:'$5.1M',delta:'duplicate risk identified',col:'var(--amber-text)' },
+          { label:'Close cycle time',        val:'5.2d', delta:'↓ from 6.2d baseline',    col:'var(--green-text)' },
+        ].map((k,i) => React.createElement('div', { key:i, className:'kpi' },
+          React.createElement('div', { className:'kpi-label' }, k.label),
+          React.createElement('div', { className:'kpi-val mono', style:{ color: k.col } }, k.val),
+          React.createElement('div', { className:'kpi-delta' }, k.delta)
+        ))
+      ),
+
+      // Main grid: table + plant conformance
+      React.createElement('div', { className:'main-grid' },
+        React.createElement('div', { className:'panel' },
+          React.createElement('div', { className:'panel-hdr' },
+            React.createElement('span', { className:'panel-title' }, 'P2P anomaly queue — live'),
+            React.createElement('span', { className:'badge badge-red' }, ANOMALIES.length + ' active')
+          ),
+          React.createElement('table', { className:'tbl' },
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                ['Invoice ID','Vendor','Plant','Amount','Anomaly type','Score','Status'].map(h =>
+                  React.createElement('th', { key:h }, h)
+                )
+              )
+            ),
+            React.createElement('tbody', null,
+              ANOMALIES.map(r => React.createElement('tr', {
+                key: r.id,
+                className: sel && sel.id === r.id ? 'selected' : '',
+                onClick: () => handleSelect(r),
+              },
+                React.createElement('td', { className:'mono', style:{ fontSize:11 } }, r.id),
+                React.createElement('td', null, r.vendor.split(' ').slice(0,2).join(' ')),
+                React.createElement('td', { className:'mono', style:{ fontSize:10, color:'var(--text2)' } }, r.plant.replace('MFG-','')),
+                React.createElement('td', { className:'mono', style:{ fontSize:12, fontWeight:500 } }, fmtAmt(r.amount)),
+                React.createElement('td', { style:{ fontSize:11 } }, r.type),
+                React.createElement('td', null, React.createElement(RiskBar, { score: r.anomScore })),
+                React.createElement('td', null,
+                  React.createElement('span', { className: statusCls(r.status) }, r.status)
+                )
+              ))
+            )
+          )
+        ),
+        React.createElement('div', { className:'panel' },
+          React.createElement(PlantPanel)
+        )
+      ),
+
+      // Bottom grid: SHAP + escalation
+      React.createElement('div', { className:'bottom-grid' },
+        React.createElement('div', { className:'panel' },
+          React.createElement('div', { className:'panel-hdr' },
+            React.createElement('span', { className:'panel-title' }, 'SHAP feature attribution — anomaly triage agent'),
+            sel && React.createElement('span', { className:'mono', style:{ fontSize:10, color:'var(--text3)' } }, 'Isolation Forest · TreeExplainer')
+          ),
+          React.createElement(SHAPPanel, { inv: sel })
+        ),
+        React.createElement('div', { className:'panel' },
+          React.createElement('div', { className:'panel-hdr' },
+            React.createElement('span', { className:'panel-title' }, 'Escalation panel · HITL'),
+            sel && React.createElement('span', { className:'badge badge-amber' }, 'awaiting review')
+          ),
+          React.createElement(EscPanel, { inv: sel, action, onAction: setAction })
+        )
+      )
+    ),
+
+    // Footer
+    React.createElement('div', { className:'footer' },
+      React.createElement('span', null, 'ARIA v1.0 · Micron Technology Finance Ops · Built by Kabir Dua'),
+      React.createElement('span', null, 'Orchestrator: GPT-4o + Claude Sonnet 4 · Process Mining: PM4Py Inductive Miner · Anomaly: Isolation Forest + LSTM Autoencoder')
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
